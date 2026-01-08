@@ -126,11 +126,10 @@ export default function HomePage() {
         <div
           id="map"
           style={{
-            width: "100%",
             height: "500px",
             marginBottom: "20px",
             borderRadius: "12px",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.2)"
+            background: "rgba(255, 255, 255, 0.7)" // 70% opacity
           }}
         />
 
@@ -154,8 +153,8 @@ export default function HomePage() {
         </div>
 
         {/* Footer / context */}
-        <footer style={{ textAlign: "center", padding: "10px 20px", borderTop: "2px dashed #ccc", color: "#555" }}>
-          <h2 style={{ color: "#d2691e" }}>About Finlay</h2>
+        <footer style={{ textAlign: "center", padding: "10px 20px"}}>
+          <h2>About Finlay</h2>
           <p>
             Finlay was a beautiful boy loved very much by his Daddy Raymond, Mummy Pamela, big brother Noah, and little sister Aimee.<br/>
             He sadly died in 2019 at only 6 weeks old and as he is turning 7 on 10th January 2026 we wanted to do something special to remember him.<br/>

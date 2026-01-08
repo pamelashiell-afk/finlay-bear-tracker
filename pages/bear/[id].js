@@ -27,6 +27,7 @@ export default function BearPage() {
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
   const [message, setMessage] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const bearColor = bearColors[id] || "#ff7f0e";
 
@@ -107,14 +108,51 @@ export default function BearPage() {
 
     const location = encodeURIComponent(`${city}, ${country}`);
     const res = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${location}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&limit=1`
-    );
+  `https://api.mapbox.com/geocoding/v5/mapbox.places/${location}.json` +
+  `?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}` +
+  `&limit=1` +
+  `&types=place` +
+  `&autocomplete=false`
+);
     const data = await res.json();
 
-    if (!data.features?.length) {
-      alert("Location not found");
-      return;
-    }
+    const feature = data.features?.[0];
+
+if (!feature) {
+  alert("Location not found");
+  return;
+}
+
+// Must be a city/place
+if (!feature.place_type.includes("place")) {
+  alert("Please enter a real city and country");
+  return;
+}
+
+// Confidence check (relevance is 0–1)
+if (feature.relevance < 0.8) {
+  alert("Location not recognised clearly. Please check spelling.");
+  return;
+}
+
+const countryContext = feature.context?.find(c =>
+  c.id.startsWith("country")
+);
+
+if (!countryContext) {
+  alert("Country could not be determined");
+  return;
+}
+
+if (
+  !countryContext.text
+    .toLowerCase()
+    .includes(country.trim().toLowerCase())
+) {
+  alert("City does not appear to match the country entered");
+  return;
+}
+
 
     const [longitude, latitude] = data.features[0].geometry.coordinates;
 
@@ -140,9 +178,16 @@ export default function BearPage() {
     );
     const snap = await getDocs(q);
     setUpdates(snap.docs.map(d => d.data()));
+
+     setShowSuccess(true);
+  setTimeout(() => {
+    setShowSuccess(false);
+  }, 2200);
   }
 
   if (!id || !bear) return <p>Loading...</p>;
+
+ 
 
   return (
     <>
@@ -194,7 +239,68 @@ export default function BearPage() {
         >
           Add Update
         </button>
+         {showSuccess && (
+  <div
+    style={{
+      marginTop: 12,
+      display: "inline-block",
+      padding: "8px 16px",
+      borderRadius: "999px",
+      background: bearColor,
+      color: "#fff",
+      fontWeight: "bold",
+      animation: "successPop s ease forwards"
+    }}
+  >
+    🧸 Update added!
+  </div>
+)}
       </form>
-    </>
+
+<div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    maxHeight: 300,
+    overflowY: "auto",
+    padding: "0 10px"
+  }}
+>
+  {updates.length === 0 && (
+    <p style={{ textAlign: "center", fontStyle: "italic", color: "#555" }}>
+      🧸 No updates yet. Be the first to add one! 📝
+    </p>
+  )}
+
+  {updates
+    .slice()
+    .sort((a, b) => b.created_at?.seconds - a.created_at?.seconds) // newest first
+    .map((u, index) => (
+      <div
+        key={index}
+        style={{
+          background: "#fff",
+          padding: "10px 14px",
+          borderRadius: 10,
+          boxShadow: "0 3px 8px rgba(0,0,0,0.1)",
+          borderLeft: `6px solid ${bearColor}`,
+          fontFamily: "'Comic Sans MS', cursive, sans-serif",
+        }}
+      >
+        <div style={{ fontWeight: "bold", marginBottom: 4 }}>
+          🧸 {u.city}, {u.country}{" "}
+          {index === 0 && <span style={{ color: "#d2691e" }}>📍 Current</span>}
+        </div>
+        {u.message && <div style={{ fontStyle: "italic", marginBottom: 4 }}>{u.message}</div>}
+        {u.created_at?.seconds && (
+          <div style={{ fontSize: "12px", color: "#888" }}>
+            {new Date(u.created_at.seconds * 1000).toLocaleString()}
+          </div>
+        )}
+      </div>
+  ))}
+</div>
+</>
   );
 }
